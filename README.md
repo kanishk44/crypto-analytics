@@ -44,7 +44,7 @@ Create a `.env` file in the project root:
 
 ```env
 # Server Configuration
-PORT=3000
+PORT=4000
 NODE_ENV=development
 
 # Supabase Configuration
