@@ -44,7 +44,7 @@ Create a `.env` file in the project root:
 
 ```env
 # Server Configuration
-PORT=4000
+PORT=3000
 NODE_ENV=development
 
 # Supabase Configuration
@@ -53,7 +53,7 @@ SUPABASE_ANON_KEY=your-anon-key-here
 
 # OpenRouter Configuration (for AI inference)
 OPENROUTER_API_KEY=your-openrouter-api-key
-OPENROUTER_MODEL=openai/gpt-4o-mini
+OPENROUTER_MODEL=openai/gpt-5.1
 
 # Cache Configuration (in minutes)
 TOKEN_INSIGHT_CACHE_TTL=60
