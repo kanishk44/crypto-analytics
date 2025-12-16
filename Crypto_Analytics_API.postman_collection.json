@@ -1,0 +1,287 @@
+{
+  "info": {
+    "_postman_id": "crypto-analytics-api",
+    "name": "Crypto Analytics API",
+    "description": "Postman collection for Crypto Analytics API - Token Insight & HyperLiquid Wallet PnL APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Health check endpoint to verify the API is running"
+      },
+      "response": []
+    },
+    {
+      "name": "Token Insight",
+      "item": [
+        {
+          "name": "Get Bitcoin Insight",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vs_currency\": \"usd\",\n  \"history_days\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/token/bitcoin/insight",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", "bitcoin", "insight"]
+            },
+            "description": "Get AI-powered insight for Bitcoin"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ethereum Insight",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vs_currency\": \"usd\",\n  \"history_days\": 7\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/token/ethereum/insight",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", "ethereum", "insight"]
+            },
+            "description": "Get AI-powered insight for Ethereum"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Chainlink Insight",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vs_currency\": \"usd\",\n  \"history_days\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/token/chainlink/insight",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", "chainlink", "insight"]
+            },
+            "description": "Get AI-powered insight for Chainlink"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Token Insight (Minimal Body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/token/:tokenId/insight",
+              "host": ["{{base_url}}"],
+              "path": ["api", "token", ":tokenId", "insight"],
+              "variable": [
+                {
+                  "key": "tokenId",
+                  "value": "bitcoin",
+                  "description": "CoinGecko token ID (e.g., bitcoin, ethereum, chainlink)"
+                }
+              ]
+            },
+            "description": "Get token insight with minimal request body (uses defaults: vs_currency=usd, history_days=30)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Token Insight API endpoints - Fetch token market data from CoinGecko and generate AI-based insights"
+    },
+    {
+      "name": "HyperLiquid PnL",
+      "item": [
+        {
+          "name": "Get Wallet PnL (Last 7 Days)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hyperliquid/:wallet/pnl?start={{start_date}}&end={{end_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hyperliquid", ":wallet", "pnl"],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "{{start_date}}",
+                  "description": "Start date in YYYY-MM-DD format"
+                },
+                {
+                  "key": "end",
+                  "value": "{{end_date}}",
+                  "description": "End date in YYYY-MM-DD format"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "wallet",
+                  "value": "0xYourWalletAddress",
+                  "description": "HyperLiquid wallet address"
+                }
+              ]
+            },
+            "description": "Get daily PnL for a HyperLiquid wallet over the last 7 days"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Wallet PnL (Specific Range)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hyperliquid/:wallet/pnl?start=2025-01-01&end=2025-01-07",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hyperliquid", ":wallet", "pnl"],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "2025-01-01",
+                  "description": "Start date in YYYY-MM-DD format"
+                },
+                {
+                  "key": "end",
+                  "value": "2025-01-07",
+                  "description": "End date in YYYY-MM-DD format"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "wallet",
+                  "value": "0xYourWalletAddress",
+                  "description": "HyperLiquid wallet address"
+                }
+              ]
+            },
+            "description": "Get daily PnL for a HyperLiquid wallet for a specific date range"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Wallet PnL (Single Day)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/hyperliquid/:wallet/pnl?start=2025-01-15&end=2025-01-15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "hyperliquid", ":wallet", "pnl"],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "2025-01-15",
+                  "description": "Start date in YYYY-MM-DD format"
+                },
+                {
+                  "key": "end",
+                  "value": "2025-01-15",
+                  "description": "End date in YYYY-MM-DD format"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "wallet",
+                  "value": "0xYourWalletAddress",
+                  "description": "HyperLiquid wallet address"
+                }
+              ]
+            },
+            "description": "Get daily PnL for a single day"
+          },
+          "response": []
+        }
+      ],
+      "description": "HyperLiquid Wallet Daily PnL API endpoints - Calculate daily wallet PnL from HyperLiquid trading activity"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "start_date",
+      "value": "2025-01-15",
+      "type": "string"
+    },
+    {
+      "key": "end_date",
+      "value": "2025-01-22",
+      "type": "string"
+    }
+  ]
+}
