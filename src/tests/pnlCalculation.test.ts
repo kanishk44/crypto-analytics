@@ -7,6 +7,19 @@ import {
 } from "../services/pnlCalculation.service.ts";
 import type { WalletData } from "../services/hyperliquid.service.ts";
 
+// Helper to create empty wallet data
+function createEmptyWalletData(overrides: Partial<WalletData> = {}): WalletData {
+  return {
+    trades: [],
+    positions: [],
+    spotBalances: [],
+    fundingPayments: [],
+    accountValue: 10000,
+    spotAccountValue: 0,
+    ...overrides,
+  };
+}
+
 describe("PnL Calculation", () => {
   describe("calculateNetPnl", () => {
     it("calculates net PnL correctly with all positive values", () => {
@@ -51,41 +64,30 @@ describe("PnL Calculation", () => {
 
   describe("calculateDailyPnl", () => {
     it("returns empty array for empty dates", () => {
-      const walletData: WalletData = {
-        trades: [],
-        positions: [],
-        fundingPayments: [],
-        accountValue: 10000,
-      };
-
+      const walletData = createEmptyWalletData();
       const result = calculateDailyPnl([], walletData);
       assert.deepStrictEqual(result, []);
     });
 
     it("calculates daily PnL for single day with no activity", () => {
-      const walletData: WalletData = {
-        trades: [],
-        positions: [],
-        fundingPayments: [],
-        accountValue: 10000,
-      };
-
+      const walletData = createEmptyWalletData();
       const result = calculateDailyPnl(["2025-01-01"], walletData);
 
       assert.strictEqual(result.length, 1);
-      assert.deepStrictEqual(result[0], {
-        date: "2025-01-01",
-        realized_pnl_usd: 0,
-        unrealized_pnl_usd: 0,
-        fees_usd: 0,
-        funding_usd: 0,
-        net_pnl_usd: 0,
-        equity_usd: 10000,
-      });
+      assert.strictEqual(result[0]!.date, "2025-01-01");
+      assert.strictEqual(result[0]!.realized_pnl_usd, 0);
+      assert.strictEqual(result[0]!.unrealized_pnl_usd, 0);
+      assert.strictEqual(result[0]!.fees_usd, 0);
+      assert.strictEqual(result[0]!.funding_usd, 0);
+      assert.strictEqual(result[0]!.net_pnl_usd, 0);
+      assert.strictEqual(result[0]!.equity_usd, 10000);
+      // Check market breakdowns exist
+      assert.ok(result[0]!.perp);
+      assert.ok(result[0]!.spot);
     });
 
-    it("calculates daily PnL with trades", () => {
-      const walletData: WalletData = {
+    it("calculates daily PnL with perp trades", () => {
+      const walletData = createEmptyWalletData({
         trades: [
           {
             coin: "BTC",
@@ -95,24 +97,23 @@ describe("PnL Calculation", () => {
             timestamp: new Date("2025-01-01T12:00:00Z"),
             fee: 5,
             closedPnl: 100,
+            market: "perp",
           },
         ],
-        positions: [],
-        fundingPayments: [],
-        accountValue: 10000,
-      };
+      });
 
       const result = calculateDailyPnl(["2025-01-01"], walletData);
 
       assert.strictEqual(result.length, 1);
       assert.strictEqual(result[0]!.realized_pnl_usd, 100);
       assert.strictEqual(result[0]!.fees_usd, 5);
+      assert.strictEqual(result[0]!.perp.realized_pnl_usd, 100);
+      assert.strictEqual(result[0]!.perp.fees_usd, 5);
+      assert.strictEqual(result[0]!.spot.realized_pnl_usd, 0);
     });
 
     it("calculates daily PnL with funding payments", () => {
-      const walletData: WalletData = {
-        trades: [],
-        positions: [],
+      const walletData = createEmptyWalletData({
         fundingPayments: [
           {
             coin: "BTC",
@@ -125,8 +126,7 @@ describe("PnL Calculation", () => {
             timestamp: new Date("2025-01-01T16:00:00Z"),
           },
         ],
-        accountValue: 10000,
-      };
+      });
 
       const result = calculateDailyPnl(["2025-01-01"], walletData);
 
@@ -135,8 +135,7 @@ describe("PnL Calculation", () => {
     });
 
     it("includes unrealized PnL only on last day", () => {
-      const walletData: WalletData = {
-        trades: [],
+      const walletData = createEmptyWalletData({
         positions: [
           {
             coin: "BTC",
@@ -144,21 +143,22 @@ describe("PnL Calculation", () => {
             entryPrice: 48000,
             unrealizedPnl: 500,
             positionValue: 25000,
+            market: "perp",
           },
         ],
-        fundingPayments: [],
         accountValue: 10500,
-      };
+      });
 
       const result = calculateDailyPnl(["2025-01-01", "2025-01-02"], walletData);
 
       assert.strictEqual(result.length, 2);
       assert.strictEqual(result[0]!.unrealized_pnl_usd, 0); // First day
       assert.strictEqual(result[1]!.unrealized_pnl_usd, 500); // Last day
+      assert.strictEqual(result[1]!.perp.unrealized_pnl_usd, 500);
     });
 
     it("calculates running equity across multiple days", () => {
-      const walletData: WalletData = {
+      const walletData = createEmptyWalletData({
         trades: [
           {
             coin: "BTC",
@@ -168,6 +168,7 @@ describe("PnL Calculation", () => {
             timestamp: new Date("2025-01-01T12:00:00Z"),
             fee: 5,
             closedPnl: 100,
+            market: "perp",
           },
           {
             coin: "BTC",
@@ -177,12 +178,10 @@ describe("PnL Calculation", () => {
             timestamp: new Date("2025-01-02T12:00:00Z"),
             fee: 5,
             closedPnl: 200,
+            market: "perp",
           },
         ],
-        positions: [],
-        fundingPayments: [],
-        accountValue: 10000,
-      };
+      });
 
       const result = calculateDailyPnl(["2025-01-01", "2025-01-02"], walletData);
 
@@ -191,6 +190,41 @@ describe("PnL Calculation", () => {
       assert.strictEqual(result[0]!.equity_usd, 10095);
       // Day 2: 10095 + 200 - 5 = 10290
       assert.strictEqual(result[1]!.equity_usd, 10290);
+    });
+
+    it("handles spot trades separately", () => {
+      const walletData = createEmptyWalletData({
+        trades: [
+          {
+            coin: "BTC",
+            side: "sell",
+            price: 50000,
+            size: 0.1,
+            timestamp: new Date("2025-01-01T12:00:00Z"),
+            fee: 5,
+            closedPnl: 100,
+            market: "perp",
+          },
+          {
+            coin: "PURR",
+            side: "sell",
+            price: 1.5,
+            size: 100,
+            timestamp: new Date("2025-01-01T14:00:00Z"),
+            fee: 0.5,
+            closedPnl: 0, // Spot doesn't have closedPnl from API
+            market: "spot",
+          },
+        ],
+      });
+
+      const result = calculateDailyPnl(["2025-01-01"], walletData);
+
+      assert.strictEqual(result.length, 1);
+      assert.strictEqual(result[0]!.perp.realized_pnl_usd, 100);
+      assert.strictEqual(result[0]!.perp.fees_usd, 5);
+      assert.strictEqual(result[0]!.spot.fees_usd, 0.5);
+      assert.strictEqual(result[0]!.fees_usd, 5.5); // Combined
     });
   });
 });
