@@ -332,6 +332,28 @@ Spot PnL is merged into the `realized_pnl_usd` field. The API contract remains u
    # Add your environment variables
    ```
 
+## Postman Collection
+
+A Postman collection is included: `Crypto_Analytics_API.postman_collection.json`
+
+**To import:**
+1. Open Postman
+2. Click "Import" button
+3. Select the `Crypto_Analytics_API.postman_collection.json` file
+4. Update the `base_url` variable (default: `http://localhost:3000`)
+
+The collection includes:
+- Health check endpoint
+- Token Insight API examples (Bitcoin, Ethereum, Chainlink)
+- HyperLiquid PnL API examples (various date ranges)
+
+**Collection Variables:**
+- `base_url`: API base URL (default: `http://localhost:3000`)
+- `start_date`: Default start date for PnL queries
+- `end_date`: Default end date for PnL queries
+
+**Note**: Update the `:wallet` path variable in HyperLiquid requests with an actual wallet address.
+
 ## Testing
 
 Run tests:
