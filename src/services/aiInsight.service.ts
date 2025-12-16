@@ -11,21 +11,16 @@ const openrouter = createOpenRouter({
 });
 
 function buildPrompt(token: TokenInfo): string {
-  return `You are a cryptocurrency market analyst. Analyze the following token data and provide a brief market insight.
+  return `Analyze this crypto token and respond with ONLY valid JSON.
 
 Token: ${token.name} (${token.symbol.toUpperCase()})
-Current Price: $${token.market_data.current_price_usd.toLocaleString()}
+Price: $${token.market_data.current_price_usd.toLocaleString()}
 Market Cap: $${token.market_data.market_cap_usd.toLocaleString()}
-24h Volume: $${token.market_data.total_volume_usd.toLocaleString()}
-24h Price Change: ${token.market_data.price_change_percentage_24h.toFixed(2)}%
-${token.market_data.price_change_percentage_7d !== undefined ? `7d Price Change: ${token.market_data.price_change_percentage_7d.toFixed(2)}%` : ""}
-${token.market_data.price_change_percentage_30d !== undefined ? `30d Price Change: ${token.market_data.price_change_percentage_30d.toFixed(2)}%` : ""}
+24h Change: ${token.market_data.price_change_percentage_24h.toFixed(2)}%
+${token.market_data.price_change_percentage_7d !== undefined ? `7d Change: ${token.market_data.price_change_percentage_7d.toFixed(2)}%` : ""}
 
-Respond with ONLY a valid JSON object in this exact format (no markdown, no code blocks):
-{
-  "reasoning": "A brief 1-2 sentence analysis of the current market conditions for this token",
-  "sentiment": "Bullish" | "Bearish" | "Neutral"
-}`;
+Response format (no markdown):
+{"reasoning": "1 sentence analysis", "sentiment": "Bullish" or "Bearish" or "Neutral"}`;
 }
 
 export async function generateInsight(token: TokenInfo): Promise<TokenInsight> {
@@ -39,8 +34,8 @@ export async function generateInsight(token: TokenInfo): Promise<TokenInsight> {
     const result = await generateText({
       model: openrouter(env.OPENROUTER_MODEL),
       prompt,
-      maxTokens: 200,
-      temperature: 0.3,
+      maxTokens: 300,
+      temperature: 0.2,
     });
 
     const duration = Date.now() - startTime;
