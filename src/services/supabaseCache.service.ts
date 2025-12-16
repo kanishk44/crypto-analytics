@@ -5,11 +5,28 @@ import type { TokenInsightRow, WalletDailyPnlRow, TokenInsightInsert, WalletDail
 import { env } from "../config/env.ts";
 import { logger } from "../utils/logger.ts";
 
+// Cache schema version - increment when response structure changes
+const CACHE_SCHEMA_VERSION = 2; // v2: Added perp/spot breakdown
+
 function isCacheValid(createdAt: string, ttlMinutes: number): boolean {
   const created = new Date(createdAt);
   const now = new Date();
   const diffMinutes = (now.getTime() - created.getTime()) / (1000 * 60);
   return diffMinutes < ttlMinutes;
+}
+
+// Validate that cached PnL data has the expected schema
+function isValidPnlSchema(daily: unknown): boolean {
+  if (!Array.isArray(daily) || daily.length === 0) return true;
+  
+  // Check if the first entry has the perp/spot breakdown (added in v2)
+  const firstDay = daily[0] as Record<string, unknown> | undefined;
+  if (!firstDay) return true;
+  
+  const hasPerp = "perp" in firstDay && typeof firstDay.perp === "object" && firstDay.perp !== null;
+  const hasSpot = "spot" in firstDay && typeof firstDay.spot === "object" && firstDay.spot !== null;
+  
+  return hasPerp && hasSpot;
 }
 
 // Token Insight Cache
@@ -111,8 +128,15 @@ export async function getCachedWalletPnl(
 
     const row = data as WalletDailyPnlRow;
 
+    // Check TTL
     if (!isCacheValid(row.created_at, env.PNL_CACHE_TTL)) {
       logger.debug("Wallet PnL cache expired", { wallet, createdAt: row.created_at });
+      return null;
+    }
+
+    // Check schema version - invalidate old cache entries missing perp/spot breakdown
+    if (!isValidPnlSchema(row.daily)) {
+      logger.info("Wallet PnL cache schema outdated, invalidating", { wallet, start, end });
       return null;
     }
 
@@ -153,7 +177,7 @@ export async function cacheWalletPnl(
     if (error) {
       logger.warn("Failed to cache wallet PnL", { wallet, error: error.message });
     } else {
-      logger.debug("Wallet PnL cached", { wallet });
+      logger.debug("Wallet PnL cached", { wallet, schemaVersion: CACHE_SCHEMA_VERSION });
     }
   } catch (error) {
     logger.warn("Failed to cache wallet PnL", { wallet, error });

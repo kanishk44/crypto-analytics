@@ -53,7 +53,7 @@ SUPABASE_ANON_KEY=your-anon-key-here
 
 # OpenRouter Configuration (for AI inference)
 OPENROUTER_API_KEY=your-openrouter-api-key
-OPENROUTER_MODEL=openai/gpt-5.1
+OPENROUTER_MODEL=openai/gpt-4o-mini
 
 # Cache Configuration (in minutes)
 TOKEN_INSIGHT_CACHE_TTL=60
@@ -149,7 +149,7 @@ POST /api/token/:id/insight
   },
   "model": {
     "provider": "openrouter",
-    "model": "openai/gpt-5.1"
+    "model": "openai/gpt-4o-mini"
   }
 }
 ```
@@ -321,7 +321,7 @@ NODE_ENV=production
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 OPENROUTER_API_KEY=your-openrouter-key
-OPENROUTER_MODEL=openai/gpt-5.1
+OPENROUTER_MODEL=openai/gpt-4o-mini
 TOKEN_INSIGHT_CACHE_TTL=60
 PNL_CACHE_TTL=1440
 EOF
@@ -386,8 +386,8 @@ sudo certbot --nginx -d your-domain.com
 
 You can use any model available on OpenRouter by setting `OPENROUTER_MODEL`:
 
-- `openai/gpt-5.1` (default, cost-effective)
-- `google/gemini-3-pro-preview` (more capable)
+- `openai/gpt-4o-mini` (default, cost-effective)
+- `openai/gpt-4o` (more capable)
 - `anthropic/claude-3-haiku` (fast)
 - `anthropic/claude-3-sonnet` (balanced)
 - `meta-llama/llama-3-70b-instruct` (open source)

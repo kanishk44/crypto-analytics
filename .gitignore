@@ -16,6 +16,7 @@ logs/
 npm-debug.log*
 
 # IDE
+.cursor/
 .idea/
 .vscode/
 *.swp
@@ -32,5 +33,4 @@ coverage/
 bun.lockb
 
 requirements.md
-
-.cursor/
+CLAUDE.md

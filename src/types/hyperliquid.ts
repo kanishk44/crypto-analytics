@@ -1,5 +1,6 @@
 // HyperLiquid API response types
 
+// Perp trades
 export interface HyperLiquidTrade {
   coin: string;
   side: "B" | "S"; // Buy or Sell
@@ -10,6 +11,18 @@ export interface HyperLiquidTrade {
   fee: string;
   feeToken: string;
   closedPnl?: string;
+}
+
+// Spot trades
+export interface HyperLiquidSpotTrade {
+  coin: string; // e.g. "PURR/USDC"
+  side: "B" | "S";
+  px: string;
+  sz: string;
+  time: number;
+  hash: string;
+  fee: string;
+  feeToken: string;
 }
 
 export interface HyperLiquidPosition {
@@ -26,6 +39,15 @@ export interface HyperLiquidPosition {
   liquidationPx: string | null;
   marginUsed: string;
   maxLeverage: number;
+}
+
+// Spot balance
+export interface HyperLiquidSpotBalance {
+  coin: string;
+  token: number;
+  hold: string;
+  total: string;
+  entryNtl: string; // Entry notional (cost basis)
 }
 
 export interface HyperLiquidFundingEntry {
@@ -56,6 +78,11 @@ export interface HyperLiquidUserState {
   withdrawable: string;
 }
 
+// Spot user state
+export interface HyperLiquidSpotUserState {
+  balances: HyperLiquidSpotBalance[];
+}
+
 export interface HyperLiquidFillsResponse {
   fills: HyperLiquidTrade[];
 }
@@ -73,6 +100,7 @@ export interface NormalizedTrade {
   timestamp: Date;
   fee: number;
   closedPnl: number;
+  market: "perp" | "spot";
 }
 
 export interface NormalizedPosition {
@@ -81,6 +109,17 @@ export interface NormalizedPosition {
   entryPrice: number;
   unrealizedPnl: number;
   positionValue: number;
+  market: "perp" | "spot";
+}
+
+export interface NormalizedSpotBalance {
+  coin: string;
+  total: number;
+  hold: number;
+  available: number;
+  entryNotional: number; // Cost basis in USD
+  currentValue: number;
+  unrealizedPnl: number;
 }
 
 export interface NormalizedFunding {
@@ -98,4 +137,3 @@ export interface DailyTradingData {
   totalFunding: number;
   realizedPnl: number;
 }
-
