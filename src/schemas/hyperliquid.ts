@@ -9,10 +9,9 @@ export const HyperLiquidFillSchema = z.object({
   fee: z.string().transform((val) => parseFloat(val)),
   px: z.string().transform((val) => parseFloat(val)),
   sz: z.string().transform((val) => parseFloat(val)),
-  side: z.enum(["A", "B"]),
+  side: z.enum(["A", "B"]), // "B" = Bid/Buy, "A" = Ask/Sell
   time: z.number(),
   coin: z.string(),
-  isBuy: z.boolean().optional(),
   oid: z.number(),
   startPosition: z
     .string()
@@ -55,16 +54,23 @@ export const HyperLiquidClearinghouseStateSchema = z.object({
         coin: z.string(),
         entryPx: z.string().transform((val) => parseFloat(val)),
         leverage: z.object({
+          type: z.enum(["isolated", "cross"]),
           value: z.string().transform((val) => parseFloat(val)),
+          rawUsd: z
+            .string()
+            .optional()
+            .transform((val) => (val ? parseFloat(val) : 0)),
         }),
         liquidationPx: z
           .string()
           .nullable()
           .transform((val) => (val ? parseFloat(val) : null)),
         marginUsed: z.string().transform((val) => parseFloat(val)),
-        maxLeverage: z.object({
-          value: z.string().transform((val) => parseFloat(val)),
-        }),
+        maxLeverage: z
+          .union([z.string(), z.number()])
+          .transform((val) =>
+            typeof val === "string" ? parseFloat(val) : val
+          ),
         returnOnEquity: z.string().transform((val) => parseFloat(val)),
         szi: z.string().transform((val) => parseFloat(val)),
         unrealizedPnl: z.string().transform((val) => parseFloat(val)),

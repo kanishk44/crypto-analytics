@@ -175,10 +175,12 @@ DB_PATH=./data/crypto-analytics.db
 #### 5. Start with PM2
 
 ```bash
-# Start using the ecosystem config file
+# Start using the ecosystem config file (recommended)
+# This automatically creates logs/ and data/ directories
 pm2 start ecosystem.config.js
 
-# Or start directly
+# Or start directly (you'll need to create directories manually)
+mkdir -p logs data
 pm2 start dist/index.js --name crypto-analytics
 
 # Save PM2 process list (survives reboot)
@@ -188,6 +190,8 @@ pm2 save
 pm2 startup
 # Follow the instructions printed by the command
 ```
+
+> **Note**: The `ecosystem.config.js` automatically creates the `logs/` and `data/` directories when loaded. If starting PM2 directly without the ecosystem file, create these directories manually first.
 
 #### 6. PM2 Commands Reference
 

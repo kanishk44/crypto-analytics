@@ -47,20 +47,24 @@ export class HyperLiquidService {
       });
 
       // Handle both array-wrapped and direct array responses
+      // Always validate through schema - no direct casts
       let response: HyperLiquidFill[];
       if (Array.isArray(rawResponse)) {
-        // Check if it's wrapped: [{ data: [...] }] or direct: [...]
+        // Check if it's wrapped: [[...]] or [{ data: [...] }] or direct: [...]
         if (rawResponse.length > 0 && Array.isArray(rawResponse[0])) {
-          response = rawResponse[0] as HyperLiquidFill[];
+          // Nested array: [[fill1, fill2, ...]]
+          response = HyperLiquidUserFillsResponseSchema.parse(rawResponse[0]);
         } else if (
           rawResponse.length > 0 &&
           typeof rawResponse[0] === "object" &&
+          rawResponse[0] !== null &&
           "data" in rawResponse[0]
         ) {
-          response = (rawResponse[0] as { data: unknown })
-            .data as HyperLiquidFill[];
+          // Wrapped with data property: [{ data: [...] }]
+          const dataPayload = (rawResponse[0] as { data: unknown }).data;
+          response = HyperLiquidUserFillsResponseSchema.parse(dataPayload);
         } else {
-          // Direct array response
+          // Direct array response: [fill1, fill2, ...]
           response = HyperLiquidUserFillsResponseSchema.parse(rawResponse);
         }
       } else if (
@@ -68,9 +72,11 @@ export class HyperLiquidService {
         rawResponse !== null &&
         "data" in rawResponse
       ) {
-        response = (rawResponse as { data: unknown }).data as HyperLiquidFill[];
-        response = HyperLiquidUserFillsResponseSchema.parse(response);
+        // Object with data property: { data: [...] }
+        const dataPayload = (rawResponse as { data: unknown }).data;
+        response = HyperLiquidUserFillsResponseSchema.parse(dataPayload);
       } else {
+        // Fallback - try to parse directly
         response = HyperLiquidUserFillsResponseSchema.parse(rawResponse);
       }
 
@@ -131,19 +137,23 @@ export class HyperLiquidService {
       });
 
       // Handle both array-wrapped and direct array responses
+      // Always validate through schema - no direct casts
       let response: HyperLiquidFunding[];
       if (Array.isArray(rawResponse)) {
         if (rawResponse.length > 0 && Array.isArray(rawResponse[0])) {
-          response = rawResponse[0] as HyperLiquidFunding[];
+          // Nested array: [[funding1, funding2, ...]]
+          response = HyperLiquidFundingResponseSchema.parse(rawResponse[0]);
         } else if (
           rawResponse.length > 0 &&
           typeof rawResponse[0] === "object" &&
           rawResponse[0] !== null &&
           "data" in rawResponse[0]
         ) {
-          response = (rawResponse[0] as { data: unknown })
-            .data as HyperLiquidFunding[];
+          // Wrapped with data property: [{ data: [...] }]
+          const dataPayload = (rawResponse[0] as { data: unknown }).data;
+          response = HyperLiquidFundingResponseSchema.parse(dataPayload);
         } else {
+          // Direct array response: [funding1, funding2, ...]
           response = HyperLiquidFundingResponseSchema.parse(rawResponse);
         }
       } else if (
@@ -151,10 +161,11 @@ export class HyperLiquidService {
         rawResponse !== null &&
         "data" in rawResponse
       ) {
-        response = (rawResponse as { data: unknown })
-          .data as HyperLiquidFunding[];
-        response = HyperLiquidFundingResponseSchema.parse(response);
+        // Object with data property: { data: [...] }
+        const dataPayload = (rawResponse as { data: unknown }).data;
+        response = HyperLiquidFundingResponseSchema.parse(dataPayload);
       } else {
+        // Fallback - try to parse directly
         response = HyperLiquidFundingResponseSchema.parse(rawResponse);
       }
 
@@ -215,6 +226,7 @@ export class HyperLiquidService {
       });
 
       // Handle both array-wrapped and direct object responses
+      // Always validate through schema - no direct casts
       let response: HyperLiquidClearinghouseState;
       if (Array.isArray(rawResponse)) {
         if (
@@ -223,26 +235,28 @@ export class HyperLiquidService {
           rawResponse[0] !== null
         ) {
           if ("data" in rawResponse[0]) {
-            response = (rawResponse[0] as { data: unknown })
-              .data as HyperLiquidClearinghouseState;
+            // Wrapped with data property: [{ data: {...} }]
+            const dataPayload = (rawResponse[0] as { data: unknown }).data;
+            response = HyperLiquidClearinghouseStateSchema.parse(dataPayload);
           } else {
-            response = rawResponse[0] as HyperLiquidClearinghouseState;
+            // Direct object in array: [{...}]
+            response = HyperLiquidClearinghouseStateSchema.parse(rawResponse[0]);
           }
         } else {
           throw new Error("Unexpected response format for clearinghouseState");
         }
       } else if (typeof rawResponse === "object" && rawResponse !== null) {
         if ("data" in rawResponse) {
-          response = (rawResponse as { data: unknown })
-            .data as HyperLiquidClearinghouseState;
+          // Object with data property: { data: {...} }
+          const dataPayload = (rawResponse as { data: unknown }).data;
+          response = HyperLiquidClearinghouseStateSchema.parse(dataPayload);
         } else {
-          response = rawResponse as HyperLiquidClearinghouseState;
+          // Direct object response: {...}
+          response = HyperLiquidClearinghouseStateSchema.parse(rawResponse);
         }
       } else {
         throw new Error("Unexpected response format for clearinghouseState");
       }
-
-      response = HyperLiquidClearinghouseStateSchema.parse(response);
       console.log(
         `Successfully fetched clearinghouseState for wallet ${wallet}`
       );

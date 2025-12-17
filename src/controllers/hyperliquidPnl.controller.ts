@@ -138,12 +138,34 @@ export class HyperLiquidPnlController {
 
       const storedDatesCount = storedSnapshots.length;
       const totalDates = dates.length;
-      const reconstructedDatesCount = totalDates - storedDatesCount;
 
-      const equitySource =
-        storedDatesCount > 0
-          ? `${storedDatesCount}/${totalDates} days have stored equity snapshots. ${reconstructedDatesCount} days are reconstructed.`
-          : "No stored equity snapshots available. All equity values are reconstructed from current state.";
+      // Check if live anchor is used (today is in range, has clearinghouseState, and not already stored)
+      const usesLiveAnchor =
+        snapshotDate !== null &&
+        dates.includes(snapshotDate) &&
+        !storedEquityMap.has(snapshotDate);
+      const liveAnchorCount = usesLiveAnchor ? 1 : 0;
+      const reconstructedDatesCount =
+        totalDates - storedDatesCount - liveAnchorCount;
+
+      // Build equity source message with all three categories
+      let equitySource: string;
+      if (storedDatesCount === 0 && !usesLiveAnchor) {
+        equitySource =
+          "No stored equity snapshots available. All equity values are reconstructed (relative, not anchored).";
+      } else {
+        const parts: string[] = [];
+        if (storedDatesCount > 0) {
+          parts.push(`${storedDatesCount} stored`);
+        }
+        if (usesLiveAnchor) {
+          parts.push(`1 live (${snapshotDate})`);
+        }
+        if (reconstructedDatesCount > 0) {
+          parts.push(`${reconstructedDatesCount} reconstructed`);
+        }
+        equitySource = `Equity sources: ${parts.join(", ")} out of ${totalDates} days.`;
+      }
 
       const unrealizedPolicy = snapshotDate
         ? `Unrealized PnL is only available for the current/last day (${snapshotDate}) from clearinghouseState. Historical days show 0 unrealized PnL.`

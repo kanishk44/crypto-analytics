@@ -86,7 +86,7 @@ export class PnlService {
         fees_usd: dayData.fees,
         funding_usd: dayData.funding,
         net_pnl_usd: netPnl,
-        equity_usd: 0,
+        equity_usd: null, // null = unknown, will be filled by reconstruction or stored snapshots
       });
     }
 
@@ -110,7 +110,7 @@ export class PnlService {
           for (let i = anchorIndex - 1; i >= 0; i--) {
             const currentRow = rows[i];
             const nextRow = rows[i + 1];
-            if (currentRow && nextRow) {
+            if (currentRow && nextRow && nextRow.equity_usd !== null) {
               currentRow.equity_usd = nextRow.equity_usd - nextRow.net_pnl_usd;
             }
           }
@@ -118,7 +118,7 @@ export class PnlService {
           for (let i = anchorIndex + 1; i < rows.length; i++) {
             const currentRow = rows[i];
             const prevRow = rows[i - 1];
-            if (currentRow && prevRow) {
+            if (currentRow && prevRow && prevRow.equity_usd !== null) {
               currentRow.equity_usd =
                 prevRow.equity_usd + currentRow.net_pnl_usd;
             }
@@ -131,13 +131,14 @@ export class PnlService {
           for (let i = rows.length - 2; i >= 0; i--) {
             const currentRow = rows[i];
             const nextRow = rows[i + 1];
-            if (currentRow && nextRow) {
+            if (currentRow && nextRow && nextRow.equity_usd !== null) {
               currentRow.equity_usd = nextRow.equity_usd - nextRow.net_pnl_usd;
             }
           }
         }
       }
     } else {
+      // No anchor available - use relative reconstruction starting from 0
       let equity = 0;
       for (let i = rows.length - 1; i >= 0; i--) {
         const currentRow = rows[i];
@@ -167,8 +168,8 @@ export class PnlService {
       }
 
       const position = positions.get(coin)!;
-      // Use isBuy if available, otherwise infer from side ('B' = Bid = Buy, 'A' = Ask = Sell)
-      const isBuy = fill.isBuy ?? fill.side === 'B';
+      // Derive buy/sell from side field: "B" = Bid/Buy, "A" = Ask/Sell
+      const isBuy = fill.side === "B";
       const size = fill.sz;
       const price = fill.px;
 
@@ -234,10 +235,10 @@ export class PnlService {
       }
     }
 
-    // Find all dates that have known equity (stored or live anchor)
+    // Find all dates that have known equity (stored or live anchor) - equity_usd !== null
     const knownDates = new Set<string>();
     for (const row of rows) {
-      if (row.equity_usd !== 0 || storedEquityMap.has(row.date)) {
+      if (row.equity_usd !== null) {
         knownDates.add(row.date);
       }
     }
@@ -255,15 +256,15 @@ export class PnlService {
     }
 
     // Reconstruct backwards and forwards from known points
-    // Process from the end to fill gaps
+    // Process from the end to fill gaps (backward reconstruction)
     for (let i = rows.length - 1; i >= 0; i--) {
       const row = rows[i];
       if (!row) continue;
 
-      if (!knownDates.has(row.date) && row.equity_usd === 0) {
+      if (row.equity_usd === null) {
         // Look for the next known date to reconstruct backwards from
         const nextRow = rows[i + 1];
-        if (nextRow && nextRow.equity_usd !== 0) {
+        if (nextRow && nextRow.equity_usd !== null) {
           row.equity_usd = nextRow.equity_usd - nextRow.net_pnl_usd;
         }
       }
@@ -274,10 +275,10 @@ export class PnlService {
       const row = rows[i];
       if (!row) continue;
 
-      if (row.equity_usd === 0 && !knownDates.has(row.date)) {
+      if (row.equity_usd === null) {
         // Look for the previous known date to reconstruct forwards from
         const prevRow = rows[i - 1];
-        if (prevRow && prevRow.equity_usd !== 0) {
+        if (prevRow && prevRow.equity_usd !== null) {
           row.equity_usd = prevRow.equity_usd + row.net_pnl_usd;
         }
       }

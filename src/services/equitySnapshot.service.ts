@@ -222,11 +222,15 @@ export class EquitySnapshotService {
     dates: string[],
     currentEquity: number | null
   ): Map<string, number | null> {
-    const snapshots = this.getSnapshots(
-      wallet,
-      dates[0] || "",
-      dates[dates.length - 1] || ""
-    );
+    // Handle empty dates array - return empty map
+    if (dates.length === 0) {
+      return new Map<string, number | null>();
+    }
+
+    const startDate = dates[0]!;
+    const endDate = dates[dates.length - 1]!;
+
+    const snapshots = this.getSnapshots(wallet, startDate, endDate);
     const snapshotMap = new Map<string, number>();
 
     for (const snapshot of snapshots) {

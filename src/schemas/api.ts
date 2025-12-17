@@ -1,14 +1,16 @@
-import { z } from 'zod';
+import { z } from "zod";
 
-export const TokenInsightRequestSchema = z.object({
-  vs_currency: z.string().default('usd'),
-  history_days: z.number().int().min(1).max(365).default(30),
-}).partial();
+export const TokenInsightRequestSchema = z
+  .object({
+    vs_currency: z.string().default("usd"),
+    history_days: z.number().int().min(1).max(365).default(30),
+  })
+  .partial();
 
 export type TokenInsightRequest = z.infer<typeof TokenInsightRequestSchema>;
 
 export const TokenInsightResponseSchema = z.object({
-  source: z.literal('coingecko'),
+  source: z.literal("coingecko"),
   token: z.object({
     id: z.string(),
     symbol: z.string(),
@@ -22,9 +24,9 @@ export const TokenInsightResponseSchema = z.object({
   }),
   insight: z.object({
     reasoning: z.string(),
-    sentiment: z.enum(['Bullish', 'Bearish', 'Neutral']),
-    risk_level: z.enum(['Low', 'Medium', 'High']).optional(),
-    time_horizon: z.enum(['Short', 'Medium', 'Long']).optional(),
+    sentiment: z.enum(["Bullish", "Bearish", "Neutral"]),
+    risk_level: z.enum(["Low", "Medium", "High"]).optional(),
+    time_horizon: z.enum(["Short", "Medium", "Long"]).optional(),
   }),
   model: z.object({
     provider: z.string(),
@@ -35,8 +37,12 @@ export const TokenInsightResponseSchema = z.object({
 export type TokenInsightResponse = z.infer<typeof TokenInsightResponseSchema>;
 
 export const HyperLiquidPnlQuerySchema = z.object({
-  start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
-  end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  start: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
+  end: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
 });
 
 export type HyperLiquidPnlQuery = z.infer<typeof HyperLiquidPnlQuerySchema>;
@@ -48,7 +54,7 @@ export const DailyPnlRowSchema = z.object({
   fees_usd: z.number(),
   funding_usd: z.number(),
   net_pnl_usd: z.number(),
-  equity_usd: z.number(),
+  equity_usd: z.number().nullable(), // null = unknown/not yet determined, 0 = real zero balance
 });
 
 export type DailyPnlRow = z.infer<typeof DailyPnlRowSchema>;
@@ -66,12 +72,13 @@ export const HyperLiquidPnlResponseSchema = z.object({
     net_pnl_usd: z.number(),
   }),
   diagnostics: z.object({
-    data_source: z.literal('hyperliquid_api'),
+    data_source: z.literal("hyperliquid_api"),
     last_api_call: z.string(),
     notes: z.string(),
     unrealized_policy: z.string().optional(),
   }),
 });
 
-export type HyperLiquidPnlResponse = z.infer<typeof HyperLiquidPnlResponseSchema>;
-
+export type HyperLiquidPnlResponse = z.infer<
+  typeof HyperLiquidPnlResponseSchema
+>;
