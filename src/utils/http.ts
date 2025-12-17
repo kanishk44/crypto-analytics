@@ -37,14 +37,21 @@ export async function fetchWithTimeout(
 
 export async function parseJsonResponse<T>(
   response: Response,
-  schema: z.ZodSchema<T>
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>
 ): Promise<T> {
   if (!response.ok) {
     const text = await response.text().catch(() => 'Unknown error');
+    console.error(`API Error ${response.status}:`, {
+      status: response.status,
+      statusText: response.statusText,
+      url: response.url,
+      body: text,
+      headers: Object.fromEntries(response.headers.entries()),
+    });
     throw new HttpError(
       response.status,
       `HTTP ${response.status}: ${text}`,
-      { status: response.status, body: text }
+      { status: response.status, body: text, url: response.url }
     );
   }
 
@@ -52,10 +59,16 @@ export async function parseJsonResponse<T>(
     throw new HttpError(502, 'Invalid JSON response from upstream', { error });
   });
 
+  // Log raw response for debugging (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Raw API response:', JSON.stringify(json, null, 2).substring(0, 500));
+  }
+
   try {
     return schema.parse(json);
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Schema validation failed. Raw response:', JSON.stringify(json, null, 2));
       throw new HttpError(
         502,
         'Upstream response validation failed',
@@ -68,7 +81,7 @@ export async function parseJsonResponse<T>(
 
 export async function fetchWithRetry<T>(
   url: string,
-  schema: z.ZodSchema<T>,
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
   options: RequestInit = {},
   maxRetries = 2
 ): Promise<T> {
