@@ -264,8 +264,7 @@ export class HyperLiquidService {
     } catch (error) {
       if (error instanceof HttpError) {
         console.error(
-          `Error fetching clearinghouseState for wallet ${wallet}: ${error.statusCode} - ${error.message}`,
-          error.details
+          `Error fetching clearinghouseState for wallet ${wallet}: ${error.statusCode} - ${error.message}`
         );
         if (error.statusCode === 404) {
           console.warn(
@@ -273,9 +272,10 @@ export class HyperLiquidService {
           );
         }
       } else {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         console.warn(
-          `Failed to fetch clearinghouse state for wallet ${wallet}:`,
-          error
+          `Failed to fetch clearinghouse state for wallet ${wallet}: ${errorMessage}`
         );
       }
       return null;

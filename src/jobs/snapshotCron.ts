@@ -27,7 +27,11 @@ export function startSnapshotCron(): void {
           console.log(`[Cron] Captured wallets: ${result.wallets.join(", ")}`);
         }
       } catch (error) {
-        console.error("[Cron] Failed to capture equity snapshots:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error(
+          `[Cron] Failed to capture equity snapshots: ${errorMessage}`
+        );
       }
     },
     {
@@ -55,7 +59,9 @@ export function startHourlySnapshotCron(): void {
           `[Cron] Hourly update: ${result.success} wallets updated`
         );
       } catch (error) {
-        console.error("[Cron] Hourly update failed:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error(`[Cron] Hourly update failed: ${errorMessage}`);
       }
     },
     {
