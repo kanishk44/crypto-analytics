@@ -55,11 +55,21 @@ export const HyperLiquidClearinghouseStateSchema = z.object({
         entryPx: z.string().transform((val) => parseFloat(val)),
         leverage: z.object({
           type: z.enum(["isolated", "cross"]),
-          value: z.string().transform((val) => parseFloat(val)),
+          value: z
+            .union([z.string(), z.number()])
+            .transform((val) =>
+              typeof val === "string" ? parseFloat(val) : val
+            ),
           rawUsd: z
-            .string()
+            .union([z.string(), z.number()])
             .optional()
-            .transform((val) => (val ? parseFloat(val) : 0)),
+            .transform((val) =>
+              val === undefined
+                ? 0
+                : typeof val === "string"
+                  ? parseFloat(val)
+                  : val
+            ),
         }),
         liquidationPx: z
           .string()
