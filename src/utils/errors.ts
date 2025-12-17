@@ -4,7 +4,7 @@ import { ZodError } from 'zod';
 
 export function errorHandler(
   err: unknown,
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction
 ): void {

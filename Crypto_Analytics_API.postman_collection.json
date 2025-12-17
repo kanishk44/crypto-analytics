@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "crypto-analytics-api",
     "name": "Crypto Analytics API",
-    "description": "Postman collection for Crypto Analytics API - Token Insight & HyperLiquid Wallet PnL APIs",
+    "description": "Postman collection for Crypto Analytics API - Token Insight, HyperLiquid Wallet PnL, and Equity Snapshot APIs",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -154,9 +154,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/hyperliquid/:wallet/pnl?start={{start_date}}&end={{end_date}}",
+              "raw": "{{base_url}}/api/hyperliquid/{{wallet}}/pnl?start={{start_date}}&end={{end_date}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "hyperliquid", ":wallet", "pnl"],
+              "path": ["api", "hyperliquid", "{{wallet}}", "pnl"],
               "query": [
                 {
                   "key": "start",
@@ -167,13 +167,6 @@
                   "key": "end",
                   "value": "{{end_date}}",
                   "description": "End date in YYYY-MM-DD format"
-                }
-              ],
-              "variable": [
-                {
-                  "key": "wallet",
-                  "value": "0xYourWalletAddress",
-                  "description": "HyperLiquid wallet address"
                 }
               ]
             },
@@ -187,26 +180,19 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/hyperliquid/:wallet/pnl?start=2025-01-01&end=2025-01-07",
+              "raw": "{{base_url}}/api/hyperliquid/{{wallet}}/pnl?start=2025-12-11&end=2025-12-17",
               "host": ["{{base_url}}"],
-              "path": ["api", "hyperliquid", ":wallet", "pnl"],
+              "path": ["api", "hyperliquid", "{{wallet}}", "pnl"],
               "query": [
                 {
                   "key": "start",
-                  "value": "2025-01-01",
+                  "value": "2025-12-11",
                   "description": "Start date in YYYY-MM-DD format"
                 },
                 {
                   "key": "end",
-                  "value": "2025-01-07",
+                  "value": "2025-12-17",
                   "description": "End date in YYYY-MM-DD format"
-                }
-              ],
-              "variable": [
-                {
-                  "key": "wallet",
-                  "value": "0xYourWalletAddress",
-                  "description": "HyperLiquid wallet address"
                 }
               ]
             },
@@ -220,26 +206,19 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/hyperliquid/:wallet/pnl?start=2025-01-15&end=2025-01-15",
+              "raw": "{{base_url}}/api/hyperliquid/{{wallet}}/pnl?start=2025-12-17&end=2025-12-17",
               "host": ["{{base_url}}"],
-              "path": ["api", "hyperliquid", ":wallet", "pnl"],
+              "path": ["api", "hyperliquid", "{{wallet}}", "pnl"],
               "query": [
                 {
                   "key": "start",
-                  "value": "2025-01-15",
+                  "value": "2025-12-17",
                   "description": "Start date in YYYY-MM-DD format"
                 },
                 {
                   "key": "end",
-                  "value": "2025-01-15",
+                  "value": "2025-12-17",
                   "description": "End date in YYYY-MM-DD format"
-                }
-              ],
-              "variable": [
-                {
-                  "key": "wallet",
-                  "value": "0xYourWalletAddress",
-                  "description": "HyperLiquid wallet address"
                 }
               ]
             },
@@ -249,6 +228,122 @@
         }
       ],
       "description": "HyperLiquid Wallet Daily PnL API endpoints - Calculate daily wallet PnL from HyperLiquid trading activity"
+    },
+    {
+      "name": "Equity Snapshots",
+      "item": [
+        {
+          "name": "Track Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Trading Wallet\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/snapshots/track/{{wallet}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "snapshots", "track", "{{wallet}}"]
+            },
+            "description": "Add a wallet to the tracking list. This will enable automatic daily equity snapshots for this wallet. Also captures an initial snapshot immediately."
+          },
+          "response": []
+        },
+        {
+          "name": "Untrack Wallet",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/snapshots/track/{{wallet}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "snapshots", "track", "{{wallet}}"]
+            },
+            "description": "Remove a wallet from the tracking list. Historical snapshots are preserved."
+          },
+          "response": []
+        },
+        {
+          "name": "List Tracked Wallets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/snapshots/tracked/list",
+              "host": ["{{base_url}}"],
+              "path": ["api", "snapshots", "tracked", "list"]
+            },
+            "description": "Get all wallets currently being tracked for automatic daily equity snapshots."
+          },
+          "response": []
+        },
+        {
+          "name": "Capture Snapshot (Single Wallet)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/snapshots/capture/{{wallet}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "snapshots", "capture", "{{wallet}}"]
+            },
+            "description": "Manually capture an equity snapshot for a specific wallet. Useful for backfilling or testing."
+          },
+          "response": []
+        },
+        {
+          "name": "Capture All Snapshots",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/snapshots/capture-all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "snapshots", "capture-all"]
+            },
+            "description": "Manually trigger equity snapshot capture for all tracked wallets. Useful for testing the cron job logic."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stored Snapshots",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/snapshots/{{wallet}}?start={{start_date}}&end={{end_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "snapshots", "{{wallet}}"],
+              "query": [
+                {
+                  "key": "start",
+                  "value": "{{start_date}}",
+                  "description": "Start date in YYYY-MM-DD format"
+                },
+                {
+                  "key": "end",
+                  "value": "{{end_date}}",
+                  "description": "End date in YYYY-MM-DD format"
+                }
+              ]
+            },
+            "description": "Retrieve stored equity snapshots for a wallet within a date range."
+          },
+          "response": []
+        }
+      ],
+      "description": "Equity Snapshot API endpoints - Store and retrieve daily equity snapshots for accurate historical tracking"
     }
   ],
   "event": [
@@ -274,13 +369,19 @@
       "type": "string"
     },
     {
+      "key": "wallet",
+      "value": "0xb13114bdBd4803526483384cB99B6c0aa48A30f7",
+      "type": "string",
+      "description": "HyperLiquid wallet address to test with"
+    },
+    {
       "key": "start_date",
-      "value": "2025-01-15",
+      "value": "2025-12-11",
       "type": "string"
     },
     {
       "key": "end_date",
-      "value": "2025-01-22",
+      "value": "2025-12-17",
       "type": "string"
     }
   ]

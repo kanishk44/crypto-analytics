@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import { errorHandler } from './utils/errors';
 import tokenInsightRoutes from './routes/tokenInsight.routes';
 import hyperliquidPnlRoutes from './routes/hyperliquidPnl.routes';
+import snapshotRoutes from './routes/snapshot.routes';
 
 export function createApp(): Express {
   const app = express();
@@ -15,8 +16,9 @@ export function createApp(): Express {
 
   app.use('/api/token', tokenInsightRoutes);
   app.use('/api/hyperliquid', hyperliquidPnlRoutes);
+  app.use('/api/snapshots', snapshotRoutes);
 
-  app.get('/health', (req, res) => {
+  app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 

@@ -1,41 +1,55 @@
-import { Request, Response, NextFunction } from 'express';
-import { HyperLiquidService } from '../services/hyperliquid.service';
-import { PnlService } from '../services/pnl.service';
-import { HyperLiquidPnlQuery, HyperLiquidPnlResponse } from '../schemas/api';
-import { HttpError } from '../utils/http';
-import { getDateRange, getToday } from '../utils/date';
+import { Request, Response, NextFunction } from "express";
+import { HyperLiquidService } from "../services/hyperliquid.service";
+import { PnlService } from "../services/pnl.service";
+import { EquitySnapshotService } from "../services/equitySnapshot.service";
+import { HyperLiquidPnlQuery, HyperLiquidPnlResponse } from "../schemas/api";
+import { HttpError } from "../utils/http";
+import { getDateRange, getToday } from "../utils/date";
 
 export class HyperLiquidPnlController {
   private hyperliquidService: HyperLiquidService;
   private pnlService: PnlService;
+  private equitySnapshotService: EquitySnapshotService;
 
   constructor() {
     this.hyperliquidService = new HyperLiquidService();
     this.pnlService = new PnlService();
+    this.equitySnapshotService = new EquitySnapshotService();
   }
 
-  async getWalletPnl(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getWalletPnl(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     try {
       const wallet = req.params.wallet as string;
       const query = req.query as unknown as HyperLiquidPnlQuery;
 
       if (!wallet || wallet.trim().length === 0) {
-        throw new HttpError(400, 'Wallet address is required');
+        throw new HttpError(400, "Wallet address is required");
       }
 
       if (!query.start || !query.end) {
-        throw new HttpError(400, 'Start and end dates are required (format: YYYY-MM-DD)');
+        throw new HttpError(
+          400,
+          "Start and end dates are required (format: YYYY-MM-DD)"
+        );
       }
 
       const dates = getDateRange(query.start, query.end);
 
       if (dates.length > 365) {
-        throw new HttpError(400, 'Date range cannot exceed 365 days');
+        throw new HttpError(400, "Date range cannot exceed 365 days");
       }
 
       const [fills, fundingPayments, clearinghouseState] = await Promise.all([
         this.hyperliquidService.fetchUserFills(wallet, query.start, query.end),
-        this.hyperliquidService.fetchFundingPayments(wallet, query.start, query.end),
+        this.hyperliquidService.fetchFundingPayments(
+          wallet,
+          query.start,
+          query.end
+        ),
         this.hyperliquidService.fetchClearinghouseState(wallet),
       ]);
 
@@ -56,7 +70,11 @@ export class HyperLiquidPnlController {
         snapshotDate ?? dates[dates.length - 1] ?? today
       );
 
-      if (snapshotDate && dates.includes(snapshotDate) && anchorUnrealizedPnl !== null) {
+      if (
+        snapshotDate &&
+        dates.includes(snapshotDate) &&
+        anchorUnrealizedPnl !== null
+      ) {
         const snapshotRow = dailyRows.find((r) => r.date === snapshotDate);
         if (snapshotRow) {
           snapshotRow.unrealized_pnl_usd = anchorUnrealizedPnl;
@@ -68,28 +86,101 @@ export class HyperLiquidPnlController {
         }
       }
 
+      // Detect spot fills using the dir field (spot fills have dir === "Buy" or "Sell")
+      // Also check for coin patterns: "@" prefix (e.g., "@107") or "PURR/USDC" exception
+      // Perp fills have dir like "Open Long", "Close Short", etc.
       const hasSpotFills = fills.some((fill) => {
-        return fill.coin && !fill.coin.includes('-PERP') && !fill.coin.includes('PERP');
+        // Check dir field first (most reliable for spot detection)
+        if (fill.dir && (fill.dir === "Buy" || fill.dir === "Sell")) {
+          return true;
+        }
+        // Fallback: check coin patterns for spot assets
+        if (fill.coin) {
+          return fill.coin.startsWith("@") || fill.coin === "PURR/USDC";
+        }
+        return false;
       });
 
       if (hasSpotFills) {
         const spotPnL = this.pnlService.calculateSpotPnL(fills);
-        dailyRows = this.pnlService.mergeSpotPnLIntoRealized(dailyRows, spotPnL);
+        dailyRows = this.pnlService.mergeSpotPnLIntoRealized(
+          dailyRows,
+          spotPnL
+        );
       }
 
-      dailyRows = this.pnlService.reconstructEquity(dailyRows, anchorEquity, snapshotDate);
+      // Get stored equity snapshots for the date range
+      const storedSnapshots = this.equitySnapshotService.getSnapshots(
+        wallet,
+        query.start,
+        query.end
+      );
+      const storedEquityMap = new Map<string, number>();
+      for (const snapshot of storedSnapshots) {
+        storedEquityMap.set(snapshot.date, snapshot.equity_usd);
+      }
+
+      // Apply stored snapshots first, then reconstruct missing dates
+      dailyRows = this.pnlService.applyStoredEquityAndReconstruct(
+        dailyRows,
+        storedEquityMap,
+        anchorEquity,
+        snapshotDate
+      );
 
       const summary = {
-        total_realized_usd: dailyRows.reduce((sum, row) => sum + row.realized_pnl_usd, 0),
-        total_unrealized_usd: dailyRows.reduce((sum, row) => sum + row.unrealized_pnl_usd, 0),
+        total_realized_usd: dailyRows.reduce(
+          (sum, row) => sum + row.realized_pnl_usd,
+          0
+        ),
+        total_unrealized_usd: dailyRows.reduce(
+          (sum, row) => sum + row.unrealized_pnl_usd,
+          0
+        ),
         total_fees_usd: dailyRows.reduce((sum, row) => sum + row.fees_usd, 0),
-        total_funding_usd: dailyRows.reduce((sum, row) => sum + row.funding_usd, 0),
+        total_funding_usd: dailyRows.reduce(
+          (sum, row) => sum + row.funding_usd,
+          0
+        ),
         net_pnl_usd: dailyRows.reduce((sum, row) => sum + row.net_pnl_usd, 0),
       };
 
+      const storedDatesCount = storedSnapshots.length;
+      const totalDates = dates.length;
+
+      // Check if live anchor is used (today is in range, has clearinghouseState, and not already stored)
+      const usesLiveAnchor =
+        snapshotDate !== null &&
+        dates.includes(snapshotDate) &&
+        !storedEquityMap.has(snapshotDate);
+      const liveAnchorCount = usesLiveAnchor ? 1 : 0;
+      const reconstructedDatesCount =
+        totalDates - storedDatesCount - liveAnchorCount;
+
+      // Build equity source message with all three categories
+      let equitySource: string;
+      if (storedDatesCount === 0 && !usesLiveAnchor) {
+        equitySource =
+          "No stored equity snapshots available. All equity values are reconstructed (relative, not anchored).";
+      } else {
+        const parts: string[] = [];
+        if (storedDatesCount > 0) {
+          parts.push(`${storedDatesCount} stored`);
+        }
+        if (usesLiveAnchor) {
+          parts.push(`1 live (${snapshotDate})`);
+        }
+        if (reconstructedDatesCount > 0) {
+          parts.push(`${reconstructedDatesCount} reconstructed`);
+        }
+        equitySource = `Equity sources: ${parts.join(
+          ", "
+        )} out of ${totalDates} days.`;
+      }
+
       const unrealizedPolicy = snapshotDate
-        ? `Unrealized PnL is only available for the current/last day (${snapshotDate}) from clearinghouseState. Historical days show 0 unrealized PnL. Equity is reconstructed backwards from the current equity snapshot.`
-        : 'No clearinghouse state available. Equity is reconstructed as relative values (not anchored to live snapshot). Unrealized PnL is 0 for all days.';
+        ? `Unrealized PnL is only available for the current/last day (${snapshotDate}) from clearinghouseState. Historical days show 0 unrealized PnL.`
+        : "No clearinghouse state available. Unrealized PnL is 0 for all days.";
 
       const response: HyperLiquidPnlResponse = {
         wallet,
@@ -98,9 +189,11 @@ export class HyperLiquidPnlController {
         daily: dailyRows,
         summary,
         diagnostics: {
-          data_source: 'hyperliquid_api',
+          data_source: "hyperliquid_api",
           last_api_call: new Date().toISOString(),
-          notes: 'PnL calculated using event-based data from HyperLiquid APIs. Equity is reconstructed, not historical snapshots.',
+          notes:
+            "PnL calculated using event-based data from HyperLiquid APIs. " +
+            equitySource,
           unrealized_policy: unrealizedPolicy,
         },
       };
@@ -111,4 +204,3 @@ export class HyperLiquidPnlController {
     }
   }
 }
-

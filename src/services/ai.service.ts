@@ -93,13 +93,16 @@ export class AIService {
     const marketData = tokenData.market_data;
     const priceChange = marketData.price_change_percentage_24h ?? 0;
     const priceChangeStr = priceChange >= 0 ? `+${priceChange.toFixed(2)}%` : `${priceChange.toFixed(2)}%`;
+    const currentPrice = marketData.current_price.usd;
+    const marketCap = marketData.market_cap.usd;
+    const totalVolume = marketData.total_volume.usd;
 
     let prompt = `Analyze the following cryptocurrency token data and provide a structured JSON insight.
 
 Token: ${tokenData.name} (${tokenData.symbol.toUpperCase()})
-Current Price (USD): $${marketData.current_price_usd?.toFixed(2) ?? 'N/A'}
-Market Cap (USD): $${marketData.market_cap_usd ? (marketData.market_cap_usd / 1e9).toFixed(2) + 'B' : 'N/A'}
-24h Volume (USD): $${marketData.total_volume_usd ? (marketData.total_volume_usd / 1e6).toFixed(2) + 'M' : 'N/A'}
+Current Price (USD): $${currentPrice?.toFixed(2) ?? 'N/A'}
+Market Cap (USD): $${marketCap ? (marketCap / 1e9).toFixed(2) + 'B' : 'N/A'}
+24h Volume (USD): $${totalVolume ? (totalVolume / 1e6).toFixed(2) + 'M' : 'N/A'}
 24h Price Change: ${priceChangeStr}
 `;
 
@@ -128,12 +131,13 @@ Respond with ONLY the JSON object.`;
 
   private getFallbackResponse(tokenData: CoinGeckoTokenDetails): AIInsightResponse {
     const priceChange = tokenData.market_data.price_change_percentage_24h ?? 0;
+    const currentPrice = tokenData.market_data.current_price.usd;
     let sentiment: 'Bullish' | 'Bearish' | 'Neutral' = 'Neutral';
     if (priceChange > 5) sentiment = 'Bullish';
     else if (priceChange < -5) sentiment = 'Bearish';
 
     return {
-      reasoning: `Token ${tokenData.name} (${tokenData.symbol}) is currently trading at $${tokenData.market_data.current_price_usd?.toFixed(2) ?? 'N/A'} with a 24h change of ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%. Market data analysis indicates ${sentiment.toLowerCase()} sentiment.`,
+      reasoning: `Token ${tokenData.name} (${tokenData.symbol}) is currently trading at $${currentPrice?.toFixed(2) ?? 'N/A'} with a 24h change of ${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%. Market data analysis indicates ${sentiment.toLowerCase()} sentiment.`,
       sentiment,
       risk_level: 'Medium',
       time_horizon: 'Medium',
