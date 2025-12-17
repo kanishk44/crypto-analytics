@@ -156,8 +156,19 @@ export class PnlService {
     const positions = new Map<string, SpotPosition>();
     const dailySpotPnL = new Map<string, number>();
 
-    // Filter to only spot fills (coin starts with "@")
-    const spotFills = fills.filter((fill) => fill.coin.startsWith("@"));
+    // Filter to only spot fills using dir field (spot fills have dir === "Buy" or "Sell")
+    // Also check coin patterns: "@" prefix (e.g., "@107") or "PURR/USDC" exception
+    const spotFills = fills.filter((fill) => {
+      // Check dir field first (most reliable for spot detection)
+      if (fill.dir && (fill.dir === "Buy" || fill.dir === "Sell")) {
+        return true;
+      }
+      // Fallback: check coin patterns for spot assets
+      if (fill.coin) {
+        return fill.coin.startsWith("@") || fill.coin === "PURR/USDC";
+      }
+      return false;
+    });
 
     for (const fill of spotFills) {
       const fillDate = timestampToDate(fill.time);

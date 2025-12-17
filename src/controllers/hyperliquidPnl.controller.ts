@@ -86,10 +86,19 @@ export class HyperLiquidPnlController {
         }
       }
 
-      // HyperLiquid spot fills have coin names starting with "@" (e.g., "@107", "@1")
-      // Perp fills have simple asset names like "BTC", "ETH"
+      // Detect spot fills using the dir field (spot fills have dir === "Buy" or "Sell")
+      // Also check for coin patterns: "@" prefix (e.g., "@107") or "PURR/USDC" exception
+      // Perp fills have dir like "Open Long", "Close Short", etc.
       const hasSpotFills = fills.some((fill) => {
-        return fill.coin && fill.coin.startsWith("@");
+        // Check dir field first (most reliable for spot detection)
+        if (fill.dir && (fill.dir === "Buy" || fill.dir === "Sell")) {
+          return true;
+        }
+        // Fallback: check coin patterns for spot assets
+        if (fill.coin) {
+          return fill.coin.startsWith("@") || fill.coin === "PURR/USDC";
+        }
+        return false;
       });
 
       if (hasSpotFills) {
@@ -164,7 +173,9 @@ export class HyperLiquidPnlController {
         if (reconstructedDatesCount > 0) {
           parts.push(`${reconstructedDatesCount} reconstructed`);
         }
-        equitySource = `Equity sources: ${parts.join(", ")} out of ${totalDates} days.`;
+        equitySource = `Equity sources: ${parts.join(
+          ", "
+        )} out of ${totalDates} days.`;
       }
 
       const unrealizedPolicy = snapshotDate
