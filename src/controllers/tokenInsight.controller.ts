@@ -35,7 +35,11 @@ export class TokenInsightController {
         );
         marketChartData = { prices: chartData.prices };
       } catch (error) {
-        console.warn(`Failed to fetch market chart for ${tokenId}:`, error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        console.warn(
+          `Failed to fetch market chart for ${tokenId}: ${errorMessage}`
+        );
       }
 
       const insight = await this.aiService.generateTokenInsight(tokenData, marketChartData);
